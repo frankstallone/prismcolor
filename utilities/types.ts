@@ -1,5 +1,6 @@
+import Color from 'colorjs.io';
 // Shared Color interface
-interface Color {
+interface SwatchColor extends Color {
   spaceId: string;
   coords: [number, number, number];
   alpha: number;
@@ -13,8 +14,8 @@ interface Value {
 }
 
 // Shared Swatch interface
-interface Swatch {
-  color: Color;
+export interface Swatch {
+  color: SwatchColor;
   value: Value;
   weight: string;
   index: number;
@@ -31,7 +32,7 @@ interface Swatch {
 }
 
 // Shared Palette interface
-interface BasePalette {
+export interface BasePalette {
   id: number;
   semantic: string;
   swatches: Swatch[];

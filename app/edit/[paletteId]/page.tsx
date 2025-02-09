@@ -5,23 +5,22 @@ import { Button } from '@/components/button';
 import { Input } from '@/components/input';
 import { usePaletteStore } from '@/app/store';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import { Text } from '@/components/text';
+import { useState, useEffect, use } from 'react';
+import { Text, Strong } from '@/components/text';
 import { Heading } from '@/components/heading';
 import { createPalette } from '@/utilities';
 
-export default function EditPalette({
-  params,
-}: {
+interface PageProps {
   params: { paletteId: string };
-}) {
+}
+
+export default function EditPaletteForm({ params }: PageProps) {
+  const { paletteId } = use(params);
   const router = useRouter();
   const paletteSeed = usePaletteStore((state) => state.paletteSeed);
   const updatePalette = usePaletteStore((state) => state.updatePalette);
 
-  const paletteIndex = paletteSeed.findIndex(
-    (p) => p.semantic === params.paletteId
-  );
+  const paletteIndex = paletteSeed.findIndex((p) => p.semantic === paletteId);
   const palette = paletteSeed[paletteIndex];
 
   const [editedPalette, setEditedPalette] = useState(palette);
@@ -49,9 +48,9 @@ export default function EditPalette({
   return (
     <div className="flex flex-col gap-8 p-8">
       <header className="flex items-center justify-between">
-        <Heading level={1}>Edit {params.paletteId} Palette</Heading>
+        <Heading level={1}>Edit {paletteId} Palette</Heading>
         <div className="flex gap-4">
-          <Button onClick={handleCancel} variant="secondary">
+          <Button onClick={handleCancel} outline>
             Cancel
           </Button>
           <Button onClick={handleSave}>Save Changes</Button>
@@ -60,9 +59,7 @@ export default function EditPalette({
 
       <div className="grid gap-8">
         <div>
-          <Text weight="medium" className="mb-2">
-            Semantic Name
-          </Text>
+          <Strong className="block mb-2">Semantic Name</Strong>
           <Input
             type="text"
             value={editedPalette.semantic}
@@ -73,9 +70,7 @@ export default function EditPalette({
         </div>
 
         <div>
-          <Text weight="medium" className="mb-2">
-            Color Keys
-          </Text>
+          <Strong className="block mb-2">Color Keys</Strong>
           <PaletteKeyEditor
             palette={editedPalette}
             onChange={setEditedPalette}
@@ -83,9 +78,7 @@ export default function EditPalette({
         </div>
 
         <div>
-          <Text weight="medium" className="mb-4">
-            Preview
-          </Text>
+          <Strong className="block mb-4">Preview</Strong>
           <PalettePreview swatches={previewPalette.swatches} />
         </div>
       </div>

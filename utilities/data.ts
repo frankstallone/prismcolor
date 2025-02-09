@@ -45,18 +45,6 @@ export const weights = [
   '950',
   '999',
 ];
-export const semantics = [
-  'primary',
-  'secondary',
-  'tertiary',
-  'positive',
-  'negative',
-  'highlight',
-  'attention',
-  'info',
-  'system',
-  'neutral',
-];
 
 export const universal = Object.freeze({
   name: 'Universal',

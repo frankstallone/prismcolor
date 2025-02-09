@@ -1,8 +1,38 @@
 import '@/app/globals.css';
 import type { Metadata } from 'next';
 import type React from 'react';
-import { ApplicationLayout } from './application-layout';
-// import { create } from 'zustand';
+import { Avatar } from '@/components/avatar';
+import { ClientSidebar } from '@/components/clientsidebar';
+import {
+  Dropdown,
+  DropdownButton,
+  DropdownDivider,
+  DropdownItem,
+  DropdownLabel,
+  DropdownMenu,
+} from '@/components/dropdown';
+import {
+  Navbar,
+  NavbarItem,
+  NavbarSection,
+  NavbarSpacer,
+} from '@/components/navbar';
+import {
+  Sidebar,
+  SidebarHeader,
+  SidebarItem,
+  SidebarLabel,
+} from '@/components/sidebar';
+import { SidebarLayout } from '@/components/sidebar-layout';
+import {
+  ArrowRightStartOnRectangleIcon,
+  ChevronDownIcon,
+  Cog8ToothIcon,
+  LightBulbIcon,
+  PlusIcon,
+  ShieldCheckIcon,
+  UserCircleIcon,
+} from '@heroicons/react/16/solid';
 import { paletteSeed } from '@/utilities/data';
 import { createPalette } from '../utilities';
 
@@ -32,7 +62,36 @@ export const metadata: Metadata = {
 // }));
 
 const palette = createPalette(paletteSeed);
-console.log(palette.values[0].swatches);
+console.log(palette.values);
+
+function AccountDropdownMenu({
+  anchor,
+}: {
+  anchor: 'top start' | 'bottom end';
+}) {
+  return (
+    <DropdownMenu className="min-w-64" anchor={anchor}>
+      <DropdownItem href="#">
+        <UserCircleIcon />
+        <DropdownLabel>My account</DropdownLabel>
+      </DropdownItem>
+      <DropdownDivider />
+      <DropdownItem href="#">
+        <ShieldCheckIcon />
+        <DropdownLabel>Privacy policy</DropdownLabel>
+      </DropdownItem>
+      <DropdownItem href="#">
+        <LightBulbIcon />
+        <DropdownLabel>Share feedback</DropdownLabel>
+      </DropdownItem>
+      <DropdownDivider />
+      <DropdownItem href="#">
+        <ArrowRightStartOnRectangleIcon />
+        <DropdownLabel>Sign out</DropdownLabel>
+      </DropdownItem>
+    </DropdownMenu>
+  );
+}
 
 export default async function RootLayout({
   children,
@@ -49,7 +108,64 @@ export default async function RootLayout({
         <link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
       </head>
       <body>
-        <ApplicationLayout>{children}</ApplicationLayout>
+        <SidebarLayout
+          navbar={
+            <Navbar>
+              <NavbarSpacer />
+              <NavbarSection>
+                <Dropdown>
+                  <DropdownButton as={NavbarItem}>
+                    <Avatar src="/users/erica.jpg" square />
+                  </DropdownButton>
+                  <AccountDropdownMenu anchor="bottom end" />
+                </Dropdown>
+              </NavbarSection>
+            </Navbar>
+          }
+          sidebar={
+            <Sidebar>
+              <SidebarHeader>
+                <Dropdown>
+                  <DropdownButton as={SidebarItem}>
+                    <SidebarLabel>Catalyst</SidebarLabel>
+                    <ChevronDownIcon />
+                  </DropdownButton>
+                  <DropdownMenu
+                    className="min-w-80 lg:min-w-64"
+                    anchor="bottom start"
+                  >
+                    <DropdownItem href="/settings">
+                      <Cog8ToothIcon />
+                      <DropdownLabel>Settings</DropdownLabel>
+                    </DropdownItem>
+                    <DropdownDivider />
+                    <DropdownItem href="#">
+                      <Avatar slot="icon" src="/teams/catalyst.svg" />
+                      <DropdownLabel>Catalyst</DropdownLabel>
+                    </DropdownItem>
+                    <DropdownItem href="#">
+                      <Avatar
+                        slot="icon"
+                        initials="BE"
+                        className="bg-purple-500 text-white"
+                      />
+                      <DropdownLabel>Big Events</DropdownLabel>
+                    </DropdownItem>
+                    <DropdownDivider />
+                    <DropdownItem href="#">
+                      <PlusIcon />
+                      <DropdownLabel>New team&hellip;</DropdownLabel>
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              </SidebarHeader>
+
+              <ClientSidebar />
+            </Sidebar>
+          }
+        >
+          {children}
+        </SidebarLayout>
       </body>
     </html>
   );

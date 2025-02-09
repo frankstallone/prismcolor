@@ -33,8 +33,6 @@ import {
   ShieldCheckIcon,
   UserCircleIcon,
 } from '@heroicons/react/16/solid';
-import { paletteSeed } from '@/utilities/data';
-import { createPalette } from '../utilities';
 
 export const metadata: Metadata = {
   title: {
@@ -60,9 +58,6 @@ export const metadata: Metadata = {
 //     set((state) => ({ delegate: { ...state.delegate, contrast } })),
 //   model: new PaletteModel(paletteSeed),
 // }));
-
-const palette = createPalette(paletteSeed);
-console.log(palette.values);
 
 function AccountDropdownMenu({
   anchor,

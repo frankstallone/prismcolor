@@ -7,13 +7,24 @@ interface PaletteStore {
   paletteSeed: PaletteConfig[];
   palettes: Model;
   updatePaletteSeed: (newSeed: PaletteConfig[]) => void;
+  updatePalette: (index: number, updatedConfig: PaletteConfig) => void;
 }
 
-export const usePaletteStore = create<PaletteStore>(() => ({
+export const usePaletteStore = create<PaletteStore>((set) => ({
   paletteSeed,
   palettes: createPalette(paletteSeed),
-  updatePaletteSeed: (newSeed) => ({
-    paletteSeed: newSeed,
-    palettes: createPalette(newSeed),
-  }),
+  updatePaletteSeed: (newSeed) =>
+    set({
+      paletteSeed: newSeed,
+      palettes: createPalette(newSeed),
+    }),
+  updatePalette: (index: number, updatedConfig: PaletteConfig) =>
+    set((state) => {
+      const newSeed = [...state.paletteSeed];
+      newSeed[index] = updatedConfig;
+      return {
+        paletteSeed: newSeed,
+        palettes: createPalette(newSeed),
+      };
+    }),
 }));

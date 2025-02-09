@@ -6,6 +6,7 @@ import {
   Cog6ToothIcon,
   QuestionMarkCircleIcon,
   SparklesIcon,
+  PencilIcon,
 } from '@heroicons/react/16/solid';
 import {
   SidebarBody,
@@ -15,31 +16,27 @@ import {
   SidebarSpacer,
 } from './sidebar';
 import { usePathname } from 'next/navigation';
+import { usePaletteStore } from '@/app/store';
 
 export function ClientSidebar() {
   const pathname = usePathname();
+  const paletteSeed = usePaletteStore((state) => state.paletteSeed);
+
   return (
     <SidebarBody>
       <SidebarSection>
-        <SidebarItem href="/" current={pathname === '/'}>
-          <HomeIcon />
-          <SidebarLabel>Home</SidebarLabel>
-        </SidebarItem>
-        <SidebarItem href="/events" current={pathname.startsWith('/events')}>
-          <Square2StackIcon />
-          <SidebarLabel>Events</SidebarLabel>
-        </SidebarItem>
-        <SidebarItem href="/orders" current={pathname.startsWith('/orders')}>
-          <TicketIcon />
-          <SidebarLabel>Orders</SidebarLabel>
-        </SidebarItem>
-        <SidebarItem
-          href="/settings"
-          current={pathname.startsWith('/settings')}
-        >
-          <Cog6ToothIcon />
-          <SidebarLabel>Settings</SidebarLabel>
-        </SidebarItem>
+        {paletteSeed.map((palette) => (
+          <SidebarItem
+            key={palette.semantic}
+            href={`/edit/${palette.semantic}`}
+            current={pathname === `/edit/${palette.semantic}`}
+          >
+            <PencilIcon />
+            <SidebarLabel className="capitalize">
+              {palette.semantic}
+            </SidebarLabel>
+          </SidebarItem>
+        ))}
       </SidebarSection>
 
       <SidebarSpacer />

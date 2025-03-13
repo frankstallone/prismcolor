@@ -1,0 +1,10 @@
+---
+description: Best practices for using Tailwind CSS
+globs: **/*.{ts,tsx,css}
+alwaysApply: false
+---
+- Use utility-first approach for consistent and maintainable styles
+- Implement responsive design with Tailwind's mobile-first breakpoints
+- Use `@apply` directive to create custom components while maintaining Tailwind's benefits
+- Optimize CSS output by purging unused styles
+- Utilize Tailwind's dark mode support for better user experience

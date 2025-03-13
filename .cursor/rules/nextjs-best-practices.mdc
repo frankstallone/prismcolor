@@ -1,0 +1,10 @@
+---
+description: Best practices for Next.js applications using the App Router
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+- Favor React Server Components (RSC) for better performance and SEO
+- Use the App Router for improved routing and data fetching
+- Implement proper error boundaries with `error.tsx` files
+- Use `loading.tsx` for loading states and Suspense for client components
+- Optimize images with `next/image` and prioritize WebP format

@@ -1,0 +1,10 @@
+---
+description: Best practices for animations with Framer Motion
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+- Use declarative animations with `animate` and `initial` props
+- Implement gesture-based animations with `whileHover`, `whileTap`, etc.
+- Optimize performance by using `layout` prop for smooth transitions
+- Use variants for reusable animation states
+- Implement scroll-based animations with `useScroll` and `useTransform` hooks

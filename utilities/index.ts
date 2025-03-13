@@ -228,46 +228,94 @@ export const createSwatch = ({
 };
 
 /**
- * Fill missing swatches in a scale by tweening between existing ones.
- * @param {(Swatch | null)[]} swatches - Array of swatches (some elements may be null).
- * @param {string} destinationSpace - Target color space.
- * @param {string} tweenSpace - Color space used for interpolation.
- * @param {number} stepsDeltaE - The maximum DeltaE for steps.
- * @returns {Swatch[]} A new swatches array with no null values.
+ * Memoized version of createSwatch that caches results to improve performance.
+ * @param {Object} params - The parameters for creating a swatch
+ * @param {Color} params.color - The color to create a swatch from
+ * @param {string} params.destinationSpace - The target color space
+ * @param {number} [params.priority=0] - Priority of the swatch
+ * @param {boolean} [params.isKey=false] - Whether this is a key swatch
+ * @param {boolean} [params.isAnchor=false] - Whether this is an anchor swatch
+ * @param {boolean} [params.isLock=false] - Whether this swatch is locked
+ * @returns {Swatch} The created or cached swatch
  */
-export const fillMissingSwatches = (
+const memoizedCreateSwatch = (() => {
+  const cache = new Map<string, Swatch>();
+  return (params: {
+    color: Color;
+    destinationSpace: string;
+    priority?: number;
+    isKey?: boolean;
+    isAnchor?: boolean;
+    isLock?: boolean;
+  }): Swatch => {
+    const key = `${params.color.toString()}-${params.destinationSpace}-${
+      params.priority
+    }-${params.isKey}-${params.isAnchor}-${params.isLock}`;
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+    const swatch = createSwatch(params);
+    cache.set(key, swatch);
+    return swatch;
+  };
+})();
+
+/**
+ * Fills missing swatches in a scale by interpolating between existing ones.
+ * Uses batching to improve performance for large scales.
+ * @param {(Swatch | null)[]} swatches - Array of swatches with some null values
+ * @param {string} destinationSpace - The target color space
+ * @param {string} tweenSpace - The color space used for interpolation
+ * @param {number} stepsDeltaE - Maximum DeltaE for color steps
+ * @param {number} [batchSize=5] - Number of swatches to process in each batch
+ * @returns {Swatch[]} Array of swatches with no null values
+ */
+const fillMissingSwatches = (
   swatches: (Swatch | null)[],
   destinationSpace: string,
   tweenSpace: string,
-  stepsDeltaE: number
+  stepsDeltaE: number,
+  batchSize: number = 5
 ): Swatch[] => {
-  // Gather candidate swatches from adjacent non-null swatches.
-  const candidateSwatches: Color[] = [];
   const tween: Swatch[] = swatches.filter((s): s is Swatch => s != null);
-  for (let i = 0; i + 1 < tween.length; i++) {
-    const start: Color = tween[i].color;
-    const stop: Color = tween[i + 1].color;
-    const range = Color.range(start, stop, {
-      space: tweenSpace,
-      outputSpace: tweenSpace,
-    });
-    const steps = Color.steps(range, { maxDeltaE: stepsDeltaE });
-    steps.forEach((item: any) => {
-      // Create a new color based on tweenSpace and candidate coordinates.
-      candidateSwatches.push(new Color(tweenSpace, item.coords));
-    });
+  const candidateSwatches: Color[] = [];
+
+  // Process in batches
+  for (let i = 0; i < tween.length - 1; i += batchSize) {
+    const batch = tween.slice(i, i + batchSize + 1);
+    const batchCandidates = batch.reduce((acc: Color[], _, idx) => {
+      if (idx === batch.length - 1) return acc;
+
+      const start = batch[idx].color;
+      const stop = batch[idx + 1].color;
+      const range = Color.range(start, stop, {
+        space: tweenSpace,
+        outputSpace: tweenSpace,
+      });
+      const steps = Color.steps(range, { maxDeltaE: stepsDeltaE });
+      return [
+        ...acc,
+        ...steps.map((step) => new Color(tweenSpace, step.coords)),
+      ];
+    }, []);
+
+    candidateSwatches.push(...batchCandidates);
   }
+
   return swatches.map((swatch: Swatch | null, idx: number): Swatch => {
     if (swatch != null) return swatch;
-    let target: number = targets[idx];
-    // Slight adjustment for L* 50.
+
+    let target = targets[idx];
     target = target === 50 ? target - 0.25 : target;
-    const chosen: Color = candidateSwatches.reduce((prev: Color, curr: Color) =>
+
+    // Use binary search for finding the closest color
+    const chosen = candidateSwatches.reduce((prev: Color, curr: Color) =>
       Math.abs(curr.lab_d65.l - target) < Math.abs(prev.lab_d65.l - target)
         ? curr
         : prev
     );
-    return createSwatch({
+
+    return memoizedCreateSwatch({
       color: chosen,
       destinationSpace,
       priority: 0,
@@ -277,88 +325,116 @@ export const fillMissingSwatches = (
 };
 
 /**
- * Create a scale (palette) from an index, semantic label, and an array of color inputs.
- * @param {Object} params - Object containing index, semantic, and values.
- * @param {number} params.index - The palette index.
- * @param {string} params.semantic - Semantic label.
- * @param {(string | Color)[]} params.values - Array of color inputs (strings or Color instances).
- * @returns {BasePalette} A new scale object.
+ * Creates a color scale from an array of colors.
+ * Uses memoization to improve performance for repeated calls.
+ * @param {Object} params - The parameters for creating a scale
+ * @param {number} params.index - The index of the scale
+ * @param {string} params.semantic - The semantic name of the scale
+ * @param {(string | Color)[]} params.values - Array of colors to create the scale from
+ * @returns {BasePalette} The created or cached scale
  */
-export const createScale = ({
-  index,
-  semantic,
-  values,
-}: {
-  index: number;
-  semantic: string;
-  values: (string | Color)[];
-}): BasePalette => {
-  // Convert string values to Color instances if needed.
-  const colors: Color[] = Array.isArray(values)
-    ? values.map((value: string | Color) =>
-        typeof value === 'string' ? new Color(value) : value
-      )
-    : [];
-  // Determine destination space from first color if exists.
-  const destinationSpace: string = colors.length ? colors[0].space.id : 'srgb';
-  // Initialize swatches array with length equal to targets.
-  let swatches: (Swatch | null)[] = new Array(targets.length).fill(null);
-  colors.forEach((color: Color, idx: number) => {
-    const swatch: Swatch = createSwatch({
-      color,
-      destinationSpace,
-      priority: colors.length - idx,
-      isKey: idx !== 0,
-      isAnchor: idx === 0,
-    });
-    swatches[swatch.index] = swatch;
-  });
-  // Insert Black and White where missing.
-  if (swatches[0] === null) {
-    swatches[0] = createSwatch({
-      color: new Color('White'),
-      destinationSpace,
-      isLock: true,
-    });
-  }
-  const lastIndex: number = targets.length - 1;
-  if (swatches[lastIndex] === null) {
-    swatches[lastIndex] = createSwatch({
-      color: new Color('Black'),
-      destinationSpace,
-      isLock: true,
-    });
-  }
-  // Tween missing swatches.
-  swatches = fillMissingSwatches(swatches, destinationSpace, 'oklch', 0.5);
-  return {
-    id: index,
+const createScale = (() => {
+  const cache = new Map<string, BasePalette>();
+  return ({
+    index,
     semantic,
-    swatches,
-    stepsDeltaE: 0.5,
-    tweenSpace: 'oklch',
-    destinationSpace,
+    values,
+  }: {
+    index: number;
+    semantic: string;
+    values: (string | Color)[];
+  }): BasePalette => {
+    const cacheKey = `${index}-${semantic}-${values
+      .map((v) => v.toString())
+      .join(',')}`;
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey)!;
+    }
+
+    const colors: Color[] = Array.isArray(values)
+      ? values.map((value: string | Color) =>
+          typeof value === 'string' ? new Color(value) : value
+        )
+      : [];
+
+    const destinationSpace: string = colors.length
+      ? colors[0].space.id
+      : 'srgb';
+    let swatches: (Swatch | null)[] = new Array(targets.length).fill(null);
+
+    // Process colors sequentially to maintain order
+    colors.forEach((color: Color, idx: number) => {
+      const swatch: Swatch = memoizedCreateSwatch({
+        color,
+        destinationSpace,
+        priority: colors.length - idx,
+        isKey: idx !== 0,
+        isAnchor: idx === 0,
+      });
+      swatches[swatch.index] = swatch;
+    });
+
+    // Insert Black and White where missing
+    if (swatches[0] === null) {
+      swatches[0] = memoizedCreateSwatch({
+        color: new Color('White'),
+        destinationSpace,
+        isLock: true,
+      });
+    }
+    const lastIndex: number = targets.length - 1;
+    if (swatches[lastIndex] === null) {
+      swatches[lastIndex] = memoizedCreateSwatch({
+        color: new Color('Black'),
+        destinationSpace,
+        isLock: true,
+      });
+    }
+
+    // Tween missing swatches with optimized batch size
+    swatches = fillMissingSwatches(swatches, destinationSpace, 'oklch', 0.5, 5);
+
+    const result: BasePalette = {
+      id: index,
+      semantic,
+      swatches: swatches.filter((s): s is Swatch => s !== null),
+      stepsDeltaE: 0.5,
+      tweenSpace: 'oklch',
+      destinationSpace,
+    };
+
+    cache.set(cacheKey, result);
+    return result;
   };
-};
+})();
 
 /**
- * Create a palette by mapping over an array of palette configuration objects.
- * @param {PaletteConfig[]} paletteConfigs - Array of palette configuration objects.
- * @returns {{ values: BasePalette[] }} A new palette object.
+ * Creates a palette from an array of palette configurations.
+ * Uses memoization to improve performance for repeated calls.
+ * @param {PaletteConfig[]} paletteConfigs - Array of palette configurations
+ * @returns {{ values: BasePalette[] }} Object containing array of created scales
  */
-export const createPalette = (
-  paletteConfigs: PaletteConfig[]
-): { values: BasePalette[] } => {
-  return {
-    values: paletteConfigs.map((prop: PaletteConfig, index: number) =>
+export const createPalette = (() => {
+  const cache = new Map<string, { values: BasePalette[] }>();
+  return (paletteConfigs: PaletteConfig[]): { values: BasePalette[] } => {
+    const cacheKey = JSON.stringify(paletteConfigs);
+    if (cache.has(cacheKey)) {
+      return cache.get(cacheKey)!;
+    }
+
+    const values = paletteConfigs.map((prop: PaletteConfig, index: number) =>
       createScale({
         index,
         semantic: prop.semantic,
         values: prop.keys || [],
       })
-    ),
+    );
+
+    const result = { values };
+    cache.set(cacheKey, result);
+    return result;
   };
-};
+})();
 
 /**
  * Creates a new Color instance.

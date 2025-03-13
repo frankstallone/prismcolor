@@ -1,12 +1,15 @@
 'use client';
 import { Swatch } from '@/utilities/types';
 import { Badge } from './badge';
+import { memo } from 'react';
 
 interface PalettePreviewProps {
   swatches: Swatch[];
 }
 
-export function PalettePreview({ swatches }: PalettePreviewProps) {
+const PalettePreview = memo(function PalettePreview({
+  swatches,
+}: PalettePreviewProps) {
   return (
     <div className="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-4">
       {swatches.map((swatch, index) => (
@@ -15,9 +18,11 @@ export function PalettePreview({ swatches }: PalettePreviewProps) {
             className="h-20 rounded-lg border border-gray-200"
             style={{ backgroundColor: swatch.hex }}
           />
-          <Badge variant="secondary">{swatch.weight}</Badge>
+          <Badge color="zinc">{swatch.weight}</Badge>
         </div>
       ))}
     </div>
   );
-}
+});
+
+export { PalettePreview };

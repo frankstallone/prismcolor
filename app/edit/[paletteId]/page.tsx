@@ -5,39 +5,42 @@ import { Button } from '@/components/button';
 import { Input } from '@/components/input';
 import { usePaletteStore } from '@/app/store';
 import { useRouter } from 'next/navigation';
-import { useState, useEffect, use } from 'react';
+import { useEffect } from 'react';
 import { Text, Strong } from '@/components/text';
 import { Heading } from '@/components/heading';
-import { createPalette } from '@/utilities';
+import { memo, use } from 'react';
 
 interface PageProps {
-  params: { paletteId: string };
+  params: Promise<{ paletteId: string }>;
 }
 
-export default function EditPaletteForm({ params }: PageProps) {
+const EditPaletteForm = memo(function EditPaletteForm({ params }: PageProps) {
   const { paletteId } = use(params);
   const router = useRouter();
   const paletteSeed = usePaletteStore((state) => state.paletteSeed);
   const updatePalette = usePaletteStore((state) => state.updatePalette);
+  const editingPalette = usePaletteStore((state) => state.editingPalette);
+  const previewPalette = usePaletteStore((state) => state.previewPalette);
+  const setEditingPalette = usePaletteStore((state) => state.setEditingPalette);
+  const updateEditingPalette = usePaletteStore(
+    (state) => state.updateEditingPalette
+  );
 
   const paletteIndex = paletteSeed.findIndex((p) => p.semantic === paletteId);
   const palette = paletteSeed[paletteIndex];
 
-  const [editedPalette, setEditedPalette] = useState(palette);
-  const [previewPalette, setPreviewPalette] = useState(
-    createPalette([palette]).values[0]
-  );
-
   useEffect(() => {
-    setPreviewPalette(createPalette([editedPalette]).values[0]);
-  }, [editedPalette]);
+    if (palette) {
+      setEditingPalette(palette);
+    }
+  }, [palette, setEditingPalette]);
 
-  if (!palette) {
+  if (!palette || !editingPalette || !previewPalette) {
     return <Text>Palette not found</Text>;
   }
 
   const handleSave = () => {
-    updatePalette(paletteIndex, editedPalette);
+    updatePalette(paletteIndex, editingPalette);
     router.push('/');
   };
 
@@ -62,9 +65,12 @@ export default function EditPaletteForm({ params }: PageProps) {
           <Strong className="block mb-2">Semantic Name</Strong>
           <Input
             type="text"
-            value={editedPalette.semantic}
+            value={editingPalette.semantic}
             onChange={(e) =>
-              setEditedPalette({ ...editedPalette, semantic: e.target.value })
+              updateEditingPalette({
+                ...editingPalette,
+                semantic: e.target.value,
+              })
             }
           />
         </div>
@@ -72,8 +78,8 @@ export default function EditPaletteForm({ params }: PageProps) {
         <div>
           <Strong className="block mb-2">Color Keys</Strong>
           <PaletteKeyEditor
-            palette={editedPalette}
-            onChange={setEditedPalette}
+            palette={editingPalette}
+            onChange={updateEditingPalette}
           />
         </div>
 
@@ -84,4 +90,6 @@ export default function EditPaletteForm({ params }: PageProps) {
       </div>
     </div>
   );
-}
+});
+
+export default EditPaletteForm;

@@ -1,6 +1,6 @@
 'use client';
 import { PaletteConfig } from '@/utilities/types';
-import { useState } from 'react';
+import { memo } from 'react';
 import { Button } from './button';
 import { Input } from './input';
 import { ColorPicker } from './color-picker';
@@ -11,29 +11,27 @@ interface PaletteKeyEditorProps {
   onChange: (updatedPalette: PaletteConfig) => void;
 }
 
-export function PaletteKeyEditor({ palette, onChange }: PaletteKeyEditorProps) {
-  const [keys, setKeys] = useState<string[]>(palette.keys || []);
-  const [newKey, setNewKey] = useState('');
+const PaletteKeyEditor = memo(function PaletteKeyEditor({
+  palette,
+  onChange,
+}: PaletteKeyEditorProps) {
+  const keys = palette.keys || [];
 
-  const handleAddKey = () => {
+  const handleAddKey = (newKey: string) => {
     if (newKey) {
       const updatedKeys = [...keys, newKey];
-      setKeys(updatedKeys);
       onChange({ ...palette, keys: updatedKeys });
-      setNewKey('');
     }
   };
 
   const handleRemoveKey = (index: number) => {
     const updatedKeys = keys.filter((_, i) => i !== index);
-    setKeys(updatedKeys);
     onChange({ ...palette, keys: updatedKeys });
   };
 
   const handleColorPicked = (color: string, index: number) => {
     const updatedKeys = [...keys];
     updatedKeys[index] = color;
-    setKeys(updatedKeys);
     onChange({ ...palette, keys: updatedKeys });
   };
 
@@ -42,12 +40,25 @@ export function PaletteKeyEditor({ palette, onChange }: PaletteKeyEditorProps) {
       <div className="flex items-end gap-4">
         <Input
           type="text"
-          value={newKey}
-          onChange={(e) => setNewKey(e.target.value)}
           placeholder="Add new color key (hex or CSS color)"
           className="flex-1"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              handleAddKey(e.currentTarget.value);
+              e.currentTarget.value = '';
+            }
+          }}
         />
-        <Button onClick={handleAddKey}>Add Key</Button>
+        <Button
+          onClick={() =>
+            handleAddKey(
+              (document.querySelector('input[type="text"]') as HTMLInputElement)
+                ?.value || ''
+            )
+          }
+        >
+          Add Key
+        </Button>
       </div>
 
       <div className="space-y-2">
@@ -63,7 +74,7 @@ export function PaletteKeyEditor({ palette, onChange }: PaletteKeyEditorProps) {
               value={key}
               onChange={(color) => handleColorPicked(color, index)}
             />
-            <Button secondary onClick={() => handleRemoveKey(index)}>
+            <Button outline onClick={() => handleRemoveKey(index)}>
               <XMarkIcon className="h-5 w-5" />
             </Button>
           </div>
@@ -71,4 +82,6 @@ export function PaletteKeyEditor({ palette, onChange }: PaletteKeyEditorProps) {
       </div>
     </div>
   );
-}
+});
+
+export { PaletteKeyEditor };

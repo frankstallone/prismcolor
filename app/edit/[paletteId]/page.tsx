@@ -1,4 +1,4 @@
-import { PaletteEditForm } from '@/app/components/palette-edit-form';
+import { PaletteEditForm } from '@/components/palette-edit-form';
 import { paletteSeed } from '@/utilities/data';
 import { Text } from '@/components/text';
 

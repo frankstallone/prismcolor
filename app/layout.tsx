@@ -126,7 +126,7 @@ export default async function RootLayout({
               <SidebarHeader>
                 <Dropdown>
                   <DropdownButton as={SidebarItem}>
-                    <SidebarLabel>Catalyst</SidebarLabel>
+                    <SidebarLabel>PrismColor</SidebarLabel>
                     <ChevronDownIcon />
                   </DropdownButton>
                   <DropdownMenu
@@ -140,15 +140,7 @@ export default async function RootLayout({
                     <DropdownDivider />
                     <DropdownItem href="#">
                       <Avatar slot="icon" src="/teams/catalyst.svg" />
-                      <DropdownLabel>Catalyst</DropdownLabel>
-                    </DropdownItem>
-                    <DropdownItem href="#">
-                      <Avatar
-                        slot="icon"
-                        initials="BE"
-                        className="bg-purple-500 text-white"
-                      />
-                      <DropdownLabel>Big Events</DropdownLabel>
+                      <DropdownLabel>PrismColor</DropdownLabel>
                     </DropdownItem>
                     <DropdownDivider />
                     <DropdownItem href="#">

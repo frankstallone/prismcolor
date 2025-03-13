@@ -3,7 +3,7 @@ import { PaletteConfig } from '@/utilities/types';
 import { useState } from 'react';
 import { Button } from './button';
 import { Input } from './input';
-import { ColorPicker } from 'react-aria-components';
+import { ColorPicker } from './color-picker';
 import { XMarkIcon } from '@heroicons/react/16/solid';
 
 interface PaletteKeyEditorProps {
@@ -49,7 +49,7 @@ export function PaletteKeyEditor({ palette, onChange }: PaletteKeyEditorProps) {
         />
         <Button onClick={handleAddKey}>Add Key</Button>
       </div>
-      
+
       <div className="space-y-2">
         {keys.map((key, index) => (
           <div key={index} className="flex items-center gap-4">
@@ -62,13 +62,8 @@ export function PaletteKeyEditor({ palette, onChange }: PaletteKeyEditorProps) {
             <ColorPicker
               value={key}
               onChange={(color) => handleColorPicked(color, index)}
-            >
-              <Button variant="secondary">Pick Color</Button>
-            </ColorPicker>
-            <Button
-              onClick={() => handleRemoveKey(index)}
-              variant="secondary"
-            >
+            />
+            <Button secondary onClick={() => handleRemoveKey(index)}>
               <XMarkIcon className="h-5 w-5" />
             </Button>
           </div>

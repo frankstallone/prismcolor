@@ -1,6 +1,6 @@
 'use client';
 import { PaletteConfig } from '@/utilities/types';
-import { memo, useCallback, useRef } from 'react';
+import { memo, useCallback, useRef, useMemo } from 'react';
 import { Button } from './button';
 import { Input } from './input';
 import { ColorPicker } from './color-picker';
@@ -15,8 +15,8 @@ const PaletteKeyEditor = memo(function PaletteKeyEditor({
   palette,
   onChange,
 }: PaletteKeyEditorProps) {
-  const keys = palette.keys || [];
-  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
+  const keys = useMemo(() => palette.keys || [], [palette.keys]);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   const debouncedOnChange = useCallback(
     (updatedPalette: PaletteConfig) => {
@@ -25,7 +25,7 @@ const PaletteKeyEditor = memo(function PaletteKeyEditor({
       }
       debounceTimeoutRef.current = setTimeout(() => {
         onChange(updatedPalette);
-      }, 100);
+      }, 0);
     },
     [onChange]
   );

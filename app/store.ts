@@ -15,6 +15,20 @@ interface PaletteStore {
   setPreviewPalette: (palette: BasePalette) => void;
 }
 
+// Memoize the createPalette function to prevent unnecessary recalculations
+const memoizedCreatePalette = (() => {
+  const cache = new Map<string, BasePalette>();
+  return (palette: PaletteConfig) => {
+    const key = JSON.stringify(palette);
+    if (cache.has(key)) {
+      return cache.get(key)!;
+    }
+    const result = createPalette([palette]).values[0];
+    cache.set(key, result);
+    return result;
+  };
+})();
+
 export const usePaletteStore = create<PaletteStore>((set) => ({
   paletteSeed,
   palettes: createPalette(paletteSeed),
@@ -37,12 +51,12 @@ export const usePaletteStore = create<PaletteStore>((set) => ({
   setEditingPalette: (palette) =>
     set(() => ({
       editingPalette: palette,
-      previewPalette: createPalette([palette]).values[0],
+      previewPalette: memoizedCreatePalette(palette),
     })),
   updateEditingPalette: (palette) =>
     set(() => ({
       editingPalette: palette,
-      previewPalette: createPalette([palette]).values[0],
+      previewPalette: memoizedCreatePalette(palette),
     })),
   setPreviewPalette: (palette) => set({ previewPalette: palette }),
 }));

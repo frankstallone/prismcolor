@@ -1,6 +1,6 @@
 'use client';
 import { PaletteConfig } from '@/utilities/types';
-import { memo } from 'react';
+import { memo, useCallback, useRef } from 'react';
 import { Button } from './button';
 import { Input } from './input';
 import { ColorPicker } from './color-picker';
@@ -16,24 +16,46 @@ const PaletteKeyEditor = memo(function PaletteKeyEditor({
   onChange,
 }: PaletteKeyEditorProps) {
   const keys = palette.keys || [];
+  const debounceTimeoutRef = useRef<NodeJS.Timeout>();
 
-  const handleAddKey = (newKey: string) => {
-    if (newKey) {
-      const updatedKeys = [...keys, newKey];
+  const debouncedOnChange = useCallback(
+    (updatedPalette: PaletteConfig) => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+      debounceTimeoutRef.current = setTimeout(() => {
+        onChange(updatedPalette);
+      }, 100);
+    },
+    [onChange]
+  );
+
+  const handleAddKey = useCallback(
+    (newKey: string) => {
+      if (newKey) {
+        const updatedKeys = [...keys, newKey];
+        onChange({ ...palette, keys: updatedKeys });
+      }
+    },
+    [keys, palette, onChange]
+  );
+
+  const handleRemoveKey = useCallback(
+    (index: number) => {
+      const updatedKeys = keys.filter((_, i) => i !== index);
       onChange({ ...palette, keys: updatedKeys });
-    }
-  };
+    },
+    [keys, palette, onChange]
+  );
 
-  const handleRemoveKey = (index: number) => {
-    const updatedKeys = keys.filter((_, i) => i !== index);
-    onChange({ ...palette, keys: updatedKeys });
-  };
-
-  const handleColorPicked = (color: string, index: number) => {
-    const updatedKeys = [...keys];
-    updatedKeys[index] = color;
-    onChange({ ...palette, keys: updatedKeys });
-  };
+  const handleColorPicked = useCallback(
+    (color: string, index: number) => {
+      const updatedKeys = [...keys];
+      updatedKeys[index] = color;
+      debouncedOnChange({ ...palette, keys: updatedKeys });
+    },
+    [keys, palette, debouncedOnChange]
+  );
 
   return (
     <div className="space-y-4">
